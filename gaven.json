@@ -1,5 +1,8 @@
 {
   "props":{
+    "othersVersion":"master",
+    "domain":"",
+	"version":"master"
   },
   "profiles":[
   ],
