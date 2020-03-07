@@ -10,7 +10,7 @@ import (
 // be used to detail if the given signature should reference a compressed
 // public key or not. If successful the bytes of the compact signature will be
 // returned in the format:
-// <(byte of 27+public key solution)+4 if compressed >< padded bytes for signature R><padded bytes for signature S>
+// <(byte of 27+public key solution)+4 if compressed ><bytes of signature>
 // where the R and S parameters are padde up to the bitlengh of the curve.
 func SignCake(curve *KoblitzCurve, key *PrivateKey,
 	hash []byte, isCompressedKey bool) ([]byte, error) {
@@ -26,29 +26,10 @@ func SignCake(curve *KoblitzCurve, key *PrivateKey,
 	for i := 0; i < (curve.H+1)*2; i++ {
 		pk, err := recoverKeyFromSignature(curve, sig, hash, i, true)
 		if err == nil && pk.X.Cmp(key.X) == 0 && pk.Y.Cmp(key.Y) == 0 {
-			//result := make([]byte, 1, 2*curve.byteSize+1)
 			result[0] = 27 + byte(i)
 			if isCompressedKey {
 				result[0] += 4
 			}
-			//// Not sure this needs rounding but safer to do so.
-			//curvelen := (curve.BitSize + 7) / 8
-			//
-			//// Pad R and S to curvelen if needed.
-			//bytelen := (sig.R.BitLen() + 7) / 8
-			//if bytelen < curvelen {
-			//	result = append(result,
-			//		make([]byte, curvelen-bytelen)...)
-			//}
-			//result = append(result, sig.R.Bytes()...)
-			//
-			//bytelen = (sig.S.BitLen() + 7) / 8
-			//if bytelen < curvelen {
-			//	result = append(result,
-			//		make([]byte, curvelen-bytelen)...)
-			//}
-			//result = append(result, sig.S.Bytes()...)
-
 			return result, nil
 		}
 	}
@@ -62,18 +43,7 @@ func SignCake(curve *KoblitzCurve, key *PrivateKey,
 // or not, else an error will be returned.
 func RecoverCake(curve *KoblitzCurve, signature,
 	hash []byte) (*PublicKey, bool, error) {
-	//bitlen := (curve.BitSize + 7) / 8
-	//if len(signature) != 1+bitlen*2 {
-	//	return nil, false, errors.New("invalid compact signature size")
-	//}
-
 	iteration := int((signature[0] - 27) & ^byte(4))
-
-	// format is <header byte><bitlen R><bitlen S>
-	//sig := &Signature{
-	//	R: new(big.Int).SetBytes(signature[1 : bitlen+1]),
-	//	S: new(big.Int).SetBytes(signature[bitlen+1:]),
-	//}
 	sig, err := ParseSignature(signature[1:], curve)
 	if err != nil {
 		return nil, false, err
