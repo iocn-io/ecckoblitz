@@ -45,6 +45,10 @@ var (
 //
 // 0x30 <length> 0x02 <length r> r 0x02 <length s> s
 func (sig *Signature) Serialize() []byte {
+	return serializeSignature(sig, 0)
+}
+
+func serializeSignature(sig *Signature, prefix int) []byte {
 	// low 'S' malleability breaker
 	sigS := sig.S
 	if sigS.Cmp(S256().halfOrder) == 1 {
@@ -58,16 +62,16 @@ func (sig *Signature) Serialize() []byte {
 	// total length of returned signature is 1 byte for each magic and
 	// length (6 total), plus lengths of r and s
 	length := 6 + len(rb) + len(sb)
-	b := make([]byte, length)
+	b := make([]byte, prefix+length)
 
-	b[0] = 0x30
-	b[1] = byte(length - 2)
-	b[2] = 0x02
-	b[3] = byte(len(rb))
-	offset := copy(b[4:], rb) + 4
-	b[offset] = 0x02
-	b[offset+1] = byte(len(sb))
-	copy(b[offset+2:], sb)
+	b[prefix+0] = 0x30
+	b[prefix+1] = byte(length - 2)
+	b[prefix+2] = 0x02
+	b[prefix+3] = byte(len(rb))
+	offset := copy(b[prefix+4:], rb) + 4
+	b[prefix+offset] = 0x02
+	b[prefix+offset+1] = byte(len(sb))
+	copy(b[prefix+offset+2:], sb)
 	return b
 }
 
